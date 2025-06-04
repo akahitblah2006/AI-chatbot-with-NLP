@@ -1,0 +1,65 @@
+import nltk
+import random
+import string
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+nltk.download('punkt')    
+nltk.download('wordnet')    
+
+
+knowledge_base = [
+    "Hello! How can I assist you today?",
+    "Hi, I'm your chatbot!",
+    "I can answer your queries related to this project.",
+    "My name is NLPBot.",
+    "I'm created using NLTK in Python.",
+    "Tell me your question.",
+    "Bye! Have a great day.",
+    "Goodbye!",
+    "I'm functioning properly.",
+    "I use natural language processing to understand you."
+]
+
+
+lemmer = nltk.stem.WordNetLemmatizer()
+
+
+def normalize_text(text):
+    text = text.lower()
+    remove_punct = dict((ord(punct), None) for punct in string.punctuation)
+    tokens = nltk.word_tokenize(text.translate(remove_punct))
+    return [lemmer.lemmatize(token) for token in tokens]
+
+
+def generate_response(user_input):
+    sentences = knowledge_base.copy()
+    sentences.append(user_input)
+    
+    vectorizer = TfidfVectorizer(tokenizer=normalize_text, stop_words='english')
+    tfidf = vectorizer.fit_transform(sentences)
+    similarity = cosine_similarity(tfidf[-1], tfidf[:-1])
+    
+    index = similarity.argsort()[0][-1]
+    score = similarity[0][index]
+    
+    if score < 0.2:
+        return "I'm sorry, I didn't understand that. Can you rephrase?"
+    else:
+        return knowledge_base[index]
+
+
+def chat():
+    print("NLPBot: Hello! Ask me anything. Type 'bye' to exit.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ['bye', 'exit', 'quit']:
+            print("NLPBot: Goodbye! ")
+            break
+        else:
+            response = generate_response(user_input)
+            print("NLPBot:", response)
+
+
+if __name__ == "__main__":
+    chat()
